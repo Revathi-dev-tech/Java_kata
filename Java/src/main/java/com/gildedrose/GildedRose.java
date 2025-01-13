@@ -1,6 +1,13 @@
 package com.gildedrose;
 
+import java.util.Arrays;
+
 class GildedRose {
+
+    public static final String SULFURAS_HAND_OF_RAGNAROS = "Sulfuras, Hand of Ragnaros";
+    public static final String AGED_BRIE = "Aged Brie";
+    public static final String BACKSTAGE_PASSES_TO_A_TAFKAL_80_ETC_CONCERT = "Backstage passes to a TAFKAL80ETC concert";
+    public static final String CONJURED = "Conjured Mana Cake";
     Item[] items;
 
     public GildedRose(Item[] items) {
@@ -8,55 +15,58 @@ class GildedRose {
     }
 
     public void updateQuality() {
-        for (int i = 0; i < items.length; i++) {
-            if (!items[i].name.equals("Aged Brie")
-                    && !items[i].name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-                if (items[i].quality > 0) {
-                    if (!items[i].name.equals("Sulfuras, Hand of Ragnaros")) {
-                        items[i].quality = items[i].quality - 1;
+        Arrays.stream(items)
+            .forEach(item -> {
+                // Handle "Sulfuras" (never changes)
+                switch (item.name) {
+                    case SULFURAS_HAND_OF_RAGNAROS:
+                        break;
+                    // Handle "Aged Brie"
+                    case AGED_BRIE:
+                        if (item.quality < 50) {
+                            item.quality++;
+                        }
+                        break;
+                    // Handle "Backstage passes"
+                    case BACKSTAGE_PASSES_TO_A_TAFKAL_80_ETC_CONCERT:
+                        handleBackstagePasses(item);
+                        break;
+                    // Handle "Conjured" items
+                    case CONJURED: {
+                        int degradeAmount = (item.sellIn <= 0) ? 4 : 2; // Degrades by 4 if SellIn is passed, else by 2
+                        item.quality -= degradeAmount;
+                        break;
+                    }
+                    // Handle default items
+                    default: {
+                        int degradeAmount = (item.sellIn <= 0) ? 2 : 1; // Degrades by 2 if SellIn is passed, else by 1
+                        item.quality -= degradeAmount;
+                        break;
                     }
                 }
-            } else {
-                if (items[i].quality < 50) {
-                    items[i].quality = items[i].quality + 1;
 
-                    if (items[i].name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-                        if (items[i].sellIn < 11) {
-                            if (items[i].quality < 50) {
-                                items[i].quality = items[i].quality + 1;
-                            }
-                        }
-
-                        if (items[i].sellIn < 6) {
-                            if (items[i].quality < 50) {
-                                items[i].quality = items[i].quality + 1;
-                            }
-                        }
-                    }
+                if (!item.name.equals(SULFURAS_HAND_OF_RAGNAROS)) {
+                    item.quality = adjustQuality(item.quality);
+                    item.sellIn--;
                 }
-            }
+            });
+    }
 
-            if (!items[i].name.equals("Sulfuras, Hand of Ragnaros")) {
-                items[i].sellIn = items[i].sellIn - 1;
-            }
+    private int adjustQuality(int quality) {
+        return Math.max(0, Math.min(50, quality));
+    }
 
-            if (items[i].sellIn < 0) {
-                if (!items[i].name.equals("Aged Brie")) {
-                    if (!items[i].name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-                        if (items[i].quality > 0) {
-                            if (!items[i].name.equals("Sulfuras, Hand of Ragnaros")) {
-                                items[i].quality = items[i].quality - 1;
-                            }
-                        }
-                    } else {
-                        items[i].quality = items[i].quality - items[i].quality;
-                    }
-                } else {
-                    if (items[i].quality < 50) {
-                        items[i].quality = items[i].quality + 1;
-                    }
-                }
+    private static void handleBackstagePasses(Item item) {
+        if (item.sellIn <= 0) {
+            item.quality = 0;
+        } else {
+            int qualityIncrease = 1;
+            if (item.sellIn <= 5) {
+                qualityIncrease = 3;
+            } else if (item.sellIn <= 10) {
+                qualityIncrease = 2;
             }
+            item.quality += qualityIncrease;
         }
     }
 }
